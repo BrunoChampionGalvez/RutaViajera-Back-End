@@ -10,7 +10,7 @@ const config = {
   // host: 'postgresdb',
   port: Number(process.env.DB_PORT),
   username: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
+  password: String(process.env.DB_PASSWORD),
   autoLoadEntities: true,
   logging: ['query', 'error', 'schema', 'warn'],
   dropSchema: false, // false produccion
