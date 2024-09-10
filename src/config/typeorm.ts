@@ -13,8 +13,8 @@ const config = {
   password: String(process.env.DB_PASSWORD),
   autoLoadEntities: true,
   logging: ['query', 'error', 'schema', 'warn'],
-  dropSchema: false, // false produccion
-  synchronize: false, // false produccion
+  dropSchema: true, // false produccion
+  synchronize: true, // false produccion
   entities: ['dist/**/*.entity{.ts,.js}'],
   migrations: ['dist/migrations/*{.ts,.js}'],
 };
