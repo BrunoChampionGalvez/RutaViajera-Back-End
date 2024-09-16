@@ -87,21 +87,20 @@ export class HotelAdminRepository {
   //! Obtener un admin de Hotel por su ID
 
   async getHotelAdminById(id: string) {
-    if (!(await this.isValidUUID(id))) {
-      throw new BadRequestException('ID inválido');
-    }
     const hotelAdmin = await this.hotelAdminsRepository.findOne({
-      where: { id: id, isDeleted: false, hotels: { isDeleted: false } },
+      where: { id: id },
       relations: {
         hotels: true,
       },
     });
-
-    hotelAdmin.hotels = hotelAdmin.hotels.filter((hotel) => hotel.isDeleted === false)
+    
     if (!hotelAdmin) return `No se encontro el administrador con ID: ${id}`;
-    hotelAdmin.numberOfHotels = hotelAdmin.hotels
-      ? hotelAdmin.hotels.length
-      : 0;
+    if (hotelAdmin) {
+      hotelAdmin.hotels = hotelAdmin.hotels.filter((hotel) => !hotel.isDeleted)
+      hotelAdmin.numberOfHotels = hotelAdmin.hotels
+        ? hotelAdmin.hotels.length
+        : 0;
+    }
     const { password, ...userNoPassword } = hotelAdmin;
     return userNoPassword;
   }
