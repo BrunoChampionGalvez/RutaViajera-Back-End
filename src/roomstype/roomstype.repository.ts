@@ -45,7 +45,7 @@ export class RoomsTypeRepository {
 
     }
 
-    async createDbRoomtype(roomtypeDto: CreateRoomTypeDto): Promise<string> {
+    async createDbRoomtype(roomtypeDto: CreateRoomTypeDto): Promise<RoomsType> {
         const { hotelId, name, price, ...roomtypeData } = roomtypeDto;
         console.log('Received room type DTO:', roomtypeDto);
 
@@ -73,8 +73,7 @@ export class RoomsTypeRepository {
             hotel: hotelFound
         });
 
-        await this.roomstypeDbRepository.save(newRoomtype);
-        return newRoomtype.id;
+        return await this.roomstypeDbRepository.save(newRoomtype);
     }
 
     async updateDbRoomstype(id: string, updateDbRoomstype: Partial<UpdateRoomsTypeDto>): Promise<string> {
