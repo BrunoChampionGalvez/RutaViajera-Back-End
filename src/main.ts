@@ -47,6 +47,6 @@ async function bootstrap() {
   app.use(LoggerGlobalMiddleware);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   await app.listen(3000);
-  console.log('Server listening on http://rutaviajera-backend-production.up.railway.app/api');
+  console.log('Server listening on https://rutaviajera-backend-production.up.railway.app/api');
 }
 bootstrap();
