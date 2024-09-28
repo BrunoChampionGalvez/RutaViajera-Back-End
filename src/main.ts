@@ -26,7 +26,7 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   app.enableCors({
-    origin: 'https://ruta-viajera-front-end-zsj7.vercel.app',
+    origin: 'http://localhost:3001',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
@@ -47,6 +47,6 @@ async function bootstrap() {
   app.use(LoggerGlobalMiddleware);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   await app.listen(3000);
-  console.log('Server listening on https://rutaviajera-backend-production.up.railway.app/api');
+  console.log('Server listening on http://localhost:3000/api');
 }
 bootstrap();
