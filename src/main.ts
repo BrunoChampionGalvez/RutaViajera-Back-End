@@ -27,7 +27,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: [
-      'https://ruta-viajera-front-end-zsj7.vercel.app',
+      'https://ruta-viajera-front-end.vercel.app',
       'http://localhost:3001',
       'http://localhost:3000'
     ],
