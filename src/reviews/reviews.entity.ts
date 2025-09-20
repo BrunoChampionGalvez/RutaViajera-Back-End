@@ -15,7 +15,8 @@ export class Review {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: false })
+  // Changed to text to allow longer review comments (previously length 100 caused seeding errors)
+  @Column({ type: 'text', nullable: false })
   comment: string;
 
   @Column({ type:'varchar'})

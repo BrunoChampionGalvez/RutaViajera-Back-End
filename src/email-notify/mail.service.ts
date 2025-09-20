@@ -1,28 +1,39 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
-import { config as config } from 'dotenv';
+import { ConfigService } from '@nestjs/config';
 import { CreateCustomerDto } from 'src/customers/customers.dto';
 import * as path from 'path';
 import * as fs from 'fs';
 import { CreateHotelAdminDto } from 'src/hotel-admins/hotel-admin.dto';
 
-config({ path: './.development.env' });
 @Injectable()
 export class MailService {
-  private transporter;
+  private transporter: nodemailer.Transporter | null = null;
+  private readonly logger = new Logger(MailService.name);
 
-  constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: `smtp.gmail.com`,
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.MAIL as string,
-        pass: process.env.PASS as string,
-      },
-    });
+  constructor(private readonly configService: ConfigService) {
+    const user = this.configService.get<string>('MAIL');
+    const pass = this.configService.get<string>('PASS');
+
+    if (user && pass) {
+      this.transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        auth: { user, pass },
+      });
+      this.logger.log('Mail transporter initialized');
+    } else {
+      this.logger.warn(
+        'MAIL / PASS environment variables are not set. Emails will NOT be sent. Set MAIL and PASS (Gmail App Password).'
+      );
+    }
   }
   async sendMail(to: string, subject: string, text: string, html: string) {
+    if (!this.transporter) {
+      this.logger.warn(`Skipped sending email to ${to} (mail disabled)`);
+      return { skipped: true } as any;
+    }
     const mailOptions = {
       from: 'projectmgray@gmail.com',
       to: to,
@@ -35,8 +46,9 @@ export class MailService {
       console.log('Correo enviado: %s', info.messageId);
       return info;
     } catch (error) {
-      console.error('Error al enviar el correo: %s', error);
-      throw error;
+      this.logger.error(`Error al enviar el correo: ${error}`);
+      // Do not rethrow to avoid breaking main flow (e.g., signup)
+      return { error: true } as any;
     }
   }
 

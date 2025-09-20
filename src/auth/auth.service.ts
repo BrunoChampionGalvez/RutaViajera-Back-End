@@ -26,6 +26,7 @@ import { SuperAdminRepository } from 'src/super-admin/superAdmin.repository';
 import { SuperAdmins } from 'src/super-admin/superAdmin.entity';
 import { CreateSuperAdmin } from 'src/super-admin/superAdmin.dto';
 import { GoogleLoginUserDetails } from './types/google-login-user-details.type';
+import { ConfigService } from '@nestjs/config/dist/config.service';
 
 @Injectable()
 export class AuthService {
@@ -41,15 +42,19 @@ export class AuthService {
     private readonly hotelAdminsDBRepository: Repository<HotelAdmins>,
     @InjectRepository(SuperAdmins)
     private readonly SuperAdminsDBRepository: Repository<SuperAdmins>,
+    private readonly configService: ConfigService,
   ) {}
 
   //! Creación de Cliente
 
   async signUpCustomer(customer: CreateCustomerDto) {
     const { email, password } = customer;
-    const foundCustomer =
-      await this.customersRepository.getCustomerByEmail(email);
-    if (foundCustomer) throw new BadRequestException('Email ya registrado');
+    // Verificación global de email (customer, hotel admin, super admin)
+    const existingCustomer = await this.customersRepository.getCustomerByEmail(email);
+    const existingHotelAdmin = await this.hotelAdminRepository.getHotelAdminByEmail(email);
+    const existingSuperAdmin = await this.superAdminRepository.getSuperAdminByEmail(email);
+    if (existingCustomer || existingHotelAdmin || existingSuperAdmin)
+      throw new BadRequestException('Email ya registrado (global)');
 
     //* Hasheo de la contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -66,9 +71,11 @@ export class AuthService {
 
   async signUpHotelAdmin(hotelAdmin: CreateHotelAdminDto) {
     const { email, password } = hotelAdmin;
-    const foundHotelAdmin =
-      await this.hotelAdminRepository.getHotelAdminByEmail(email);
-    if (foundHotelAdmin) throw new BadRequestException('Email ya registrado');
+    const existingCustomer = await this.customersRepository.getCustomerByEmail(email);
+    const existingHotelAdmin = await this.hotelAdminRepository.getHotelAdminByEmail(email);
+    const existingSuperAdmin = await this.superAdminRepository.getSuperAdminByEmail(email);
+    if (existingCustomer || existingHotelAdmin || existingSuperAdmin)
+      throw new BadRequestException('Email ya registrado (global)');
 
     //*Hasheo de la contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -85,9 +92,11 @@ export class AuthService {
 
   async signUpSuperAdmin(superAdmin: CreateSuperAdmin) {
     const { email, password } = superAdmin;
-    const foundSuperAdmin =
-      await this.superAdminRepository.getSuperAdminByEmail(email);
-    if (foundSuperAdmin) throw new BadRequestException('Email ya registrado');
+    const existingCustomer = await this.customersRepository.getCustomerByEmail(email);
+    const existingHotelAdmin = await this.hotelAdminRepository.getHotelAdminByEmail(email);
+    const existingSuperAdmin = await this.superAdminRepository.getSuperAdminByEmail(email);
+    if (existingCustomer || existingHotelAdmin || existingSuperAdmin)
+      throw new BadRequestException('Email ya registrado (global)');
 
     //*Hasheo de la contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -125,6 +134,7 @@ export class AuthService {
         lastName: customer.lastName,
         email: customer.email,
         isAdmin: customer.isAdmin,
+        roles: ['user'],
       };
       const token = this.jwtService.sign(payload);
 
@@ -155,6 +165,7 @@ export class AuthService {
         lastName: adminHotel.lastName,
         email: adminHotel.email,
         isAdmin: adminHotel.isAdmin,
+        roles: ['admin'],
       };
       const token = this.jwtService.sign(payload);
 
@@ -185,6 +196,7 @@ export class AuthService {
         name: superAdmin.name,
         email: superAdmin.email,
         superAdmin: superAdmin.superAdmin,
+        roles: ['SuperAdmin'],
       };
       const token = this.jwtService.sign(payload);
 
@@ -218,7 +230,7 @@ export class AuthService {
       customer.passwordResetExpires = expirationDate;
       await this.customersRepository.saveCustomerChanges(customer);
 
-      const resetUrl = `https://rutaviajera.vercel.app/reset-password/${token}`;
+      const resetUrl = `${this.configService.get('FRONT_END_URL')}/reset-password/${token}`;
 
       await this.mailService.sendMail(
         customer.email,
@@ -231,7 +243,7 @@ export class AuthService {
       adminHotel.passwordResetExpires = expirationDate;
       await this.hotelAdminRepository.saveAdminChanges(adminHotel);
 
-      const resetUrl = `https://rutaviajera.vercel.app/reset-password/${token}`;
+      const resetUrl = `${this.configService.get('FRONT_END_URL')}/reset-password/${token}`;
 
       await this.mailService.sendMail(
         adminHotel.email,
@@ -241,7 +253,7 @@ export class AuthService {
       );
     }
 
-    const resetUrl = `https://rutaviajera.vercel.app/reset-password/${token}`;
+    const resetUrl = `${this.configService.get('FRONT_END_URL')}/reset-password/${token}`;
 
     await this.mailService.sendMail(
       customer.email,

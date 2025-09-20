@@ -13,7 +13,7 @@ export class HotelAdminGoogleStrategy extends PassportStrategy(Strategy, 'google
     super({
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: 'https://back-rutaviajera.onrender.com/auth/api/callback/google/register/hotelAdmin',
+      callbackURL: `${process.env.API_URL}/auth/api/callback/google/register/hotelAdmin`,
       scope: ['profile', 'email'],
       state: true,
     });

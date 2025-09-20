@@ -9,6 +9,8 @@ import {
   Put,
   Query,
   UseGuards,
+  Req,
+  ForbiddenException,
 } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { UpdateCustomerInfoDto } from './customers.dto';
@@ -63,10 +65,19 @@ export class CustomersController {
 
   @Get(':id')
   @ApiBearerAuth()
-  @Roles(Role.Admin, Role.SuperAdmin)
+  @Roles(Role.Admin, Role.SuperAdmin, Role.User)
   @UseGuards(AuthGuard, RolesGuard)
   @ApiOperation({ summary: 'Obtener un cliente por su ID' })
-  getCustomerById(@Param('id') id: string) {
+  getCustomerById(@Param('id') id: string, @Req() req: any) {
+    const requester = req.user;
+    const roles: string[] = requester?.roles || [];
+
+    // If the requester is a normal user, only allow access to their own record
+    const isBasicUser = roles.includes(Role.User) && !roles.includes(Role.Admin) && !roles.includes(Role.SuperAdmin);
+    if (isBasicUser && requester.id !== id) {
+      throw new ForbiddenException('No puede acceder a la información de otro cliente');
+    }
+
     return this.customersService.getCustomerById(id);
   }
 

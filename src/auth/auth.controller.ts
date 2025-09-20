@@ -31,6 +31,7 @@ import { Role } from './guards/roles.enum';
 import { CreateSuperAdmin } from 'src/super-admin/superAdmin.dto';
 import { LoginGoogleAuthGuard } from './guards/login.google.authguard copy';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config/dist/config.service';
 
 @ApiTags('Autenticación y recuperación de contraseñas')
 @Controller('auth')
@@ -38,6 +39,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Get('api/google/register/customer')
@@ -49,9 +51,9 @@ export class AuthController {
   async googleCustomerAuthRedirect(@Req() req: Request, @Res() res: Response) {
     const user: any = req.user;
     if (user !== null && typeof user === 'object' && !Array.isArray(user))
-      res.redirect('https://rutaviajera.vercel.app/login');
+      res.redirect(`${this.configService.get('FRONT_END_URL')}/login`);
     if (typeof user === 'string')
-      res.redirect(`https://rutaviajera.vercel.app/register?${user}`);
+      res.redirect(`${this.configService.get('FRONT_END_URL')}/register?${user}`);
   }
 
   @Get('api/google/register/hotelAdmin')
@@ -67,9 +69,9 @@ export class AuthController {
   ) {
     const user: any = req.user;
     if (user !== null && typeof user === 'object' && !Array.isArray(user))
-      res.redirect('https://rutaviajera.vercel.app/login');
+      res.redirect(`${this.configService.get('FRONT_END_URL')}/login`);
     if (typeof user === 'string')
-      res.redirect(`https://rutaviajera.vercel.app/register?${user}`);
+      res.redirect(`${this.configService.get('FRONT_END_URL')}/register?${user}`);
   }
 
   @Get('api/google/login')
@@ -89,12 +91,12 @@ export class AuthController {
       };
       const token = this.jwtService.sign(payload);
       if (payload.isAdmin)
-        res.redirect(`https://rutaviajera.vercel.app/dashboard?token=${token}`);
+        res.redirect(`${this.configService.get('FRONT_END_URL')}/dashboard?token=${token}`);
       if (!payload.isAdmin)
-        res.redirect(`https://rutaviajera.vercel.app/home?token=${token}`);
+        res.redirect(`${this.configService.get('FRONT_END_URL')}/home?token=${token}`);
     }
     if (typeof user === 'string') {
-      res.redirect(`https://rutaviajera.vercel.app/register?${user}=userDoesNotExist`);
+      res.redirect(`${this.configService.get('FRONT_END_URL')}/register?${user}=userDoesNotExist`);
     }
   }
 

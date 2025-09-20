@@ -15,7 +15,7 @@ export class LoginGoogleStrategy extends PassportStrategy(Strategy, 'google-logi
     super({
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: 'https://back-rutaviajera.onrender.com/auth/api/callback/google/login',
+      callbackURL: `${process.env.API_URL}/auth/api/callback/google/login`,
       scope: ['profile', 'email'],
       state: true,
     });

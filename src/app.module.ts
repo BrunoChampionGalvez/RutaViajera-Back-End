@@ -33,6 +33,7 @@ import { SuperAdminRepository } from './super-admin/superAdmin.repository';
 import { SuperAdminController } from './super-admin/super-admin.controller';
 import { SuperAdminService } from './super-admin/super-admin.service';
 import { SuperAdmins } from './super-admin/superAdmin.entity';
+import { SeederModule } from './seeders/seeder.module';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { SuperAdmins } from './super-admin/superAdmin.entity';
     EmailNotifiModule,
     PassportModule.register({ session: true }),
     SuperAdminModule,
+    SeederModule,
   ],
   controllers: [
     AppController,

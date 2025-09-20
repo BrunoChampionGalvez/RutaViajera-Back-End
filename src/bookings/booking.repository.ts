@@ -303,6 +303,19 @@ async getBookingsAndItsCustomerByHotelId(id: string) {
         );
 
       if (!isBooked) {
+        console.log('[BookingDebug] No room booked for roomTypeId', roomTypeId, 'dates', checkInDate, checkOutDate);
+        // Optional: detail each room availability overlap
+        for (const rt of hotelToBook.roomstype) {
+          if (rt.id !== roomTypeId) continue;
+          for (const room of rt.rooms) {
+            const overlaps = room.availabilities?.filter(a => {
+              const aStart = new Date(a.startDate).getTime();
+              const aEnd = new Date(a.endDate).getTime();
+              return !(customerCheckOutDate <= aStart || customerCheckInDate >= aEnd);
+            }).map(a => ({id: a.id, start: a.startDate, end: a.endDate, isAvailable: a.isAvailable, isDeleted: a.isDeleted}));
+            console.log('[BookingDebug] Room', room.id, 'overlaps:', overlaps);
+          }
+        }
         throw new BadRequestException(
           'No available rooms for the specified dates.',
         );
