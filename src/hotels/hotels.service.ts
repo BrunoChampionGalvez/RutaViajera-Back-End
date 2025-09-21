@@ -47,6 +47,24 @@ export class HotelsService {
     );
   }
 
+  async getFilteredHotelsRange(
+    ratingMin: number,
+    ratingMax: number,
+    country: string,
+    city: string,
+    minPrice: number,
+    maxPrice: number,
+  ) {
+    return await this.hotelsDbRepository.getFilteredHotelsRange(
+      ratingMin,
+      ratingMax,
+      country,
+      city,
+      minPrice,
+      maxPrice,
+    );
+  }
+
   async updateDbHotel(id: string, updateHotelDto: Partial<UpdateHotelDto>) {
     return await this.hotelsDbRepository.updateDbHotel(id, updateHotelDto);
   }

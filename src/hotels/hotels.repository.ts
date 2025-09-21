@@ -190,6 +190,31 @@ export class HotelsRepository {
     return hotels;
   }
 
+  async getFilteredHotelsRange(
+    ratingMin: number,
+    ratingMax: number,
+    country: string,
+    city: string,
+    minPrice: number,
+    maxPrice: number,
+  ) {
+    const query = this.hotelDbRepository.createQueryBuilder('hotel');
+    query.where('hotel.isDeleted = false');
+    if (ratingMin) query.andWhere('hotel.rating >= :ratingMin', { ratingMin });
+    if (ratingMax) query.andWhere('hotel.rating <= :ratingMax', { ratingMax });
+  // Accent-insensitive equality without requiring the unaccent extension
+  const accentSrc = 'ÁÉÍÓÚáéíóúÑñÜü';
+  const accentDst = 'AEIOUaeiouNnUu';
+  if (country) query.andWhere(`LOWER(translate(TRIM(hotel.country), '${accentSrc}', '${accentDst}')) LIKE LOWER(translate(:countryPattern, '${accentSrc}', '${accentDst}'))`, { countryPattern: `%${country.trim()}%` });
+  if (city) query.andWhere(`LOWER(translate(TRIM(hotel.city), '${accentSrc}', '${accentDst}')) LIKE LOWER(translate(:cityPattern, '${accentSrc}', '${accentDst}'))`, { cityPattern: `%${city.trim()}%` });
+    if (minPrice !== undefined) query.andWhere('hotel.price >= :minPrice', { minPrice });
+    if (maxPrice !== undefined) query.andWhere('hotel.price <= :maxPrice', { maxPrice });
+    const hotels = await query.getMany();
+    if (hotels.length === 0)
+      throw new NotFoundException('No se encontró ningún hotel con esas características.');
+    return hotels;
+  }
+
   async updateDbHotel(
     id: string,
     updateHotelDto: Partial<UpdateHotelDto>,

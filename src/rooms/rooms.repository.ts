@@ -44,13 +44,15 @@ export class RoomsRepository{
         if(!roomtypeFound){
             throw new NotFoundException("Roomtype with ID not found");
         } 
+        // Unicidad solo dentro del mismo room type (no a nivel de hotel completo)
         const roomFound = await this.roomDbRepository.createQueryBuilder('room')
-            .innerJoinAndSelect('room.roomtype', 'roomtype')
-            .where('room.roomNumber = :roomNumber', {roomNumber})
-            .andWhere('roomtype.hotelId = :hotelId', {hotelId: roomtypeFound.hotel.id})
-            .getOne();    
-        
-        if(roomFound) throw new BadRequestException("this room number already exists in this hotel");
+            .innerJoin('room.roomtype', 'rt')
+            .where('room.roomNumber = :roomNumber', { roomNumber })
+            .andWhere('rt.id = :rtId', { rtId: roomtypeFound.id })
+            .andWhere('COALESCE(room.isDeleted, false) = false')
+            .andWhere('COALESCE(rt.isDeleted, false) = false')
+            .getOne();
+        if (roomFound) throw new BadRequestException('this room number already exists in this room type');
         
         const newRoom = this.roomDbRepository.create({
             roomNumber,

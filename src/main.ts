@@ -7,6 +7,8 @@ import * as cors from 'cors';
 import * as session from 'express-session';
 import { config as dotenvConfig } from 'dotenv';
 import * as passport from 'passport';
+import { join } from 'path';
+import * as express from 'express';
 
 dotenvConfig({ path: './.development.env' });
 
@@ -50,6 +52,10 @@ async function bootstrap() {
   app.use(passport.session());
   app.use(LoggerGlobalMiddleware);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+
+  // Static serving for uploaded images (room types, etc.)
+  const uploadsPath = join(process.cwd(), 'uploads');
+  app.use('/uploads', express.static(uploadsPath));
   await app.listen(3000);
   console.log('Server listening on ${process.env.NEXT_PUBLIC_API_URL}/api');
 }

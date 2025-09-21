@@ -10,6 +10,8 @@ import {
   Put,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 import { RoomsTypeService } from './roomstype.service';
 import { CreateRoomTypeDto } from './roomstype.dtos';
@@ -18,7 +20,11 @@ import { AuthGuard } from 'src/auth/guards/auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Role } from 'src/auth/guards/roles.enum';
 import { Roles } from 'src/decorators/roles.decorator';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { join, extname } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 import { RoomsType } from './roomstype.entity';
 
 @ApiTags('Roomstype')
@@ -157,5 +163,39 @@ export class RoomsTypeController {
   @UseGuards(AuthGuard, RolesGuard)
   deleteDbRoomtype(@Param('id', ParseUUIDPipe) id: string) {
     return this.roomstypeDbService.deleteDbRoomtype(id);
+  }
+
+  // --- Image upload (disk) for room types ---
+  @ApiOperation({ summary: 'Subir imágenes para room types (dev: guarda en disco)' })
+  @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ schema: { type: 'object', properties: { files: { type: 'array', items: { type: 'string', format: 'binary' } } } } })
+  @Post('images')
+  @Roles(Role.Admin, Role.SuperAdmin)
+  @UseGuards(AuthGuard, RolesGuard)
+  @UseInterceptors(FilesInterceptor('files', 10, {
+    storage: diskStorage({
+      destination: (req, file, cb) => {
+        const uploadPath = join(process.cwd(), 'uploads', 'roomtypes');
+        if (!existsSync(uploadPath)) mkdirSync(uploadPath, { recursive: true });
+        cb(null, uploadPath);
+      },
+      filename: (req, file, cb) => {
+        const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = extname(file.originalname) || '.jpg';
+        cb(null, unique + ext);
+      }
+    }),
+    fileFilter: (req, file, cb) => {
+      // Simple whitelist of common image mime types
+      if (/^image\/(png|jpe?g|webp|gif)$/i.test(file.mimetype)) cb(null, true);
+      else cb(null, false);
+    },
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB per file
+  }))
+  uploadRoomTypeImages(@UploadedFiles() files: Express.Multer.File[]) {
+    const basePath = '/uploads/roomtypes';
+    const list = (files || []).map(f => `${basePath}/${f.filename}`);
+    return { files: list };
   }
 }

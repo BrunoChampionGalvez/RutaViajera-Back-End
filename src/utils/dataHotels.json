@@ -494,5 +494,88 @@
       "https://content.r9cdn.net/himg/9a/22/37/leonardo-1103824-0004_CR-Veracruz-1-Aereas_0296_O-816247.jpg"
     ],
     "hotel_admin_id": "5e85364b-9f6a-4379-90ac-d128d7528f7d"
+  },
+  {
+    "name": "Hotel Casa Colonial",
+    "description": "Disfruta de la vibrante energía de Bogotá en el Hotel Casa Colonial, donde la tradición y la modernidad se encuentran en el corazón de La Candelaria. Nuestro hotel es el lugar perfecto para explorar la rica historia y cultura de Colombia.",
+    "email": "hotelcasacolonial@mail.com",
+    "country": "Colombia",
+    "city": "Bogotá",
+    "address": "Carrera 8 # 10-63, La Candelaria",
+    "location": [
+      4.5980772,
+      -74.0760515
+    ],
+    "totalRooms": 25,
+    "rating": 4,
+    "price": 180,
+    "services": [
+      "Restaurante",
+      "Bar",
+      "Wi-Fi gratuito",
+      "Servicio de habitaciones",
+      "Recepción 24 horas"
+    ],
+    "images": [
+      "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/0f/ba/29/5c/hotel-casa-colonial.jpg"
+    ],
+    "hotel_admin_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+  },
+  {
+    "name": "Hotel El Dorado Plaza",
+    "description": "Vive la experiencia única de Bogotá en el Hotel El Dorado Plaza, ubicado en el corazón de la Zona Rosa. Con vista a los cerros orientales y fácil acceso a los mejores restaurantes y centros comerciales de la ciudad.",
+    "email": "hoteleldaradoplaza@mail.com",
+    "country": "Colombia",
+    "city": "Bogotá",
+    "address": "Carrera 13 # 85-32, Zona Rosa",
+    "location": [
+      4.6692134,
+      -74.0595916
+    ],
+    "totalRooms": 45,
+    "rating": 5,
+    "price": 320,
+    "services": [
+      "Restaurante",
+      "Bar",
+      "Gimnasio",
+      "Spa",
+      "Wi-Fi gratuito",
+      "Servicio de habitaciones",
+      "Piscina",
+      "Centro de negocios"
+    ],
+    "images": [
+      "https://cf.bstatic.com/xdata/images/hotel/max1024x768/85326772.jpg"
+    ],
+    "hotel_admin_id": "b2c3d4e5-f6g7-8901-bcde-f23456789012"
+  },
+  {
+    "name": "Hotel Cartagena Dreams",
+    "description": "Sumérgete en la magia del Caribe en el Hotel Cartagena Dreams, ubicado en el centro histórico de Cartagena de Indias. Disfruta de la arquitectura colonial, las murallas históricas y la brisa del mar Caribe.",
+    "email": "hotelcartagenasueños@mail.com",
+    "country": "Colombia",
+    "city": "Cartagena",
+    "address": "Calle del Arsenal # 8B-58, Centro Histórico",
+    "location": [
+      10.4215374,
+      -75.5516555
+    ],
+    "totalRooms": 35,
+    "rating": 4,
+    "price": 250,
+    "services": [
+      "Restaurante",
+      "Bar",
+      "Piscina",
+      "Wi-Fi gratuito",
+      "Servicio de habitaciones",
+      "Aire acondicionado",
+      "Terraza"
+    ],
+    "images": [
+      "https://cf.bstatic.com/xdata/images/hotel/max1024x768/156789123.jpg"
+    ],
+    "hotel_admin_id": "c3d4e5f6-g7h8-9012-cdef-345678901234"
   }
 ]

@@ -24,9 +24,9 @@ export class RoomsTypeRepository {
     }
 
     async getRoomTypesByHotelId(hotelId: string): Promise<RoomsType[]> {
-        const roomtypes = await this.roomstypeDbRepository.find({ where: { hotel: { id: hotelId } } })
-        if (roomtypes.length === 0) throw new NotFoundException('El hotel no tiene room types.')
-        return roomtypes
+        const roomtypes = await this.roomstypeDbRepository.find({ where: { hotel: { id: hotelId }, isDeleted: false } });
+        if (roomtypes.length === 0) throw new NotFoundException('El hotel no tiene room types.');
+        return roomtypes;
     }
 
     async getDbRoomTypeById(id: string): Promise<RoomsType> {
@@ -49,9 +49,23 @@ export class RoomsTypeRepository {
         const { hotelId, name, price, ...roomtypeData } = roomtypeDto;
         console.log('Received room type DTO:', roomtypeDto);
 
-        const nameRoomtypeFound = await this.roomstypeDbRepository.findOne({ where: { name: name, hotel: { id: hotelId } } });
-        console.log('Existing room type found:', nameRoomtypeFound);
-        if (nameRoomtypeFound) throw new BadRequestException("this roomtype already exists");
+        // Look for an existing roomtype (including soft-deleted) with same name in this hotel
+        const existing = await this.roomstypeDbRepository.findOne({ where: { name: name, hotel: { id: hotelId } } });
+        console.log('Existing room type found:', existing);
+        if (existing) {
+            if (existing.isDeleted) {
+                // "Resurrect" previously soft-deleted record: update its fields and mark active
+                existing.isDeleted = false;
+                existing.price = price;
+                existing.capacity = roomtypeDto.capacity;
+                existing.totalBathrooms = roomtypeDto.totalBathrooms;
+                existing.totalBeds = roomtypeDto.totalBeds;
+                existing.images = roomtypeDto.images || existing.images || [];
+                await this.roomstypeDbRepository.save(existing);
+                return existing;
+            }
+            throw new BadRequestException("this roomtype already exists");
+        }
 
         const hotelFound: Hotel = await this.hotelDbRepository.findOne({ where: { id: hotelId }, relations: { roomstype: true } });
         if (!hotelFound) {

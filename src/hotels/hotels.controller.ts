@@ -137,26 +137,34 @@ export class HotelsController {
 
   @Get('filters')
   async getFilteredHotels(
-    @Query('rating') rating: string,
+    @Query('rating') rating: string, // deprecated single rating (minimum)
+    @Query('ratingMin') ratingMin: string,
+    @Query('ratingMax') ratingMax: string,
     @Query('country') country: string,
     @Query('city') city: string,
     @Query('minPrice') minPrice: string,
     @Query('maxPrice') maxPrice: string,
   ) {
-    if (Number(maxPrice) < 0 || Number(maxPrice) > 500)
-      throw new BadRequestException(
-        'El maxPrice enviado por query debe ser un string de un número del 0 al 500.',
-      );
-    if (Number(rating) < 1 || Number(rating) > 5)
-      throw new BadRequestException(
-        'El rating enviado por query debe ser un string de un número del 1 al 5.',
-      );
-    return await this.hotelDbService.getFilteredHotels(
-      Number(rating),
+    // Backwards compatibility: if ratingMin/Max not provided but rating is, treat rating as min
+    const rMin = ratingMin || rating;
+    const rMax = ratingMax || '5';
+    const minP = minPrice || '0';
+    const maxP = maxPrice || '500';
+    const rMinNum = Number(rMin);
+    const rMaxNum = Number(rMax);
+    const minPriceNum = Number(minP);
+    const maxPriceNum = Number(maxP);
+    if (maxPriceNum < 0 || maxPriceNum > 500 || minPriceNum < 0 || minPriceNum > 500 || minPriceNum > maxPriceNum)
+      throw new BadRequestException('Los precios deben estar entre 0 y 500 y minPrice <= maxPrice');
+    if (rMinNum < 1 || rMinNum > 5 || rMaxNum < 1 || rMaxNum > 5 || rMinNum > rMaxNum)
+      throw new BadRequestException('Las calificaciones deben estar entre 1 y 5 y ratingMin <= ratingMax');
+    return await this.hotelDbService.getFilteredHotelsRange(
+      rMinNum,
+      rMaxNum,
       country,
       city,
-      Number(minPrice),
-      Number(maxPrice),
+      minPriceNum,
+      maxPriceNum,
     );
   }
 
