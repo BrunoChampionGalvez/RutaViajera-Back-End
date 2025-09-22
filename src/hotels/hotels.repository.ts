@@ -77,13 +77,20 @@ export class HotelsRepository {
 
   async createDbHotel(hotelDto: CreateHotelDto): Promise<Hotel> {
     const { hotel_admin_id, name, email, ...hotelData } = hotelDto;
-    const nameHotel = await this.hotelDbRepository.findOne({ where: { name } });
-    if (nameHotel) throw new BadRequestException('this hotel exists');
+    // Allow reuse of name/email if the previous hotel was soft-deleted (isDeleted = true):
+    // If a record exists and isDeleted=false => block creation.
+    // If exists and isDeleted=true => "restore" it by updating fields instead of creating a new row (keeps relations history consistent).
+    const existingByName = await this.hotelDbRepository.findOne({ where: { name } });
+    if (existingByName && !existingByName.isDeleted) {
+      throw new BadRequestException('this hotel exists');
+    }
+    const existingByEmail = await this.hotelDbRepository.findOne({ where: { email } });
+    if (existingByEmail && !existingByEmail.isDeleted) {
+      throw new BadRequestException('this email exists');
+    }
 
-    const emailHotel = await this.hotelDbRepository.findOne({
-      where: { email },
-    });
-    if (emailHotel) throw new BadRequestException('this email exists');
+    // If either (or both) exist but soft-deleted, pick one to restore (prefer name match; else email).
+    const toRestore = existingByName?.isDeleted ? existingByName : (existingByEmail?.isDeleted ? existingByEmail : null);
 
     const hoteladminFound = await this.hotelAdminRepository.findOne({
       where: { id: hotel_admin_id },
@@ -91,6 +98,54 @@ export class HotelsRepository {
     if (!hoteladminFound)
       throw new NotFoundException('this Admin is not available');
 
+    if (toRestore) {
+      // Merge new data, mark as active again.
+      toRestore.name = name; // in case email match path chose this record
+      toRestore.email = email;
+      Object.assign(toRestore, hotelData);
+      toRestore.isDeleted = false;
+      toRestore.hotelAdmin = hoteladminFound; // re-associate if needed
+      const saved = await this.hotelDbRepository.save(toRestore);
+      // IMPORTANT: Al restaurar un hotel (re-uso de name/email) queremos que aparezca vacío
+      // en el editor para permitir crear room types nuevos con mismos nombres sin colisión.
+      // Los room types antiguos siguen apuntando a este mismo registro (misma PK) y provocarían
+      // que la lista se muestre poblada y que crear un nuevo room type con el mismo nombre falle.
+      // Estrategia: marcamos TODOS los room types y sus rooms como isDeleted=true en cascada lógica.
+      try {
+        // Solo seleccionamos las columnas necesarias (id) para minimizar carga.
+        const qb = this.hotelDbRepository.createQueryBuilder('hotel')
+          .leftJoinAndSelect('hotel.roomstype', 'rt')
+          .leftJoinAndSelect('rt.rooms', 'r')
+          .where('hotel.id = :id', { id: saved.id });
+        const full = await qb.getOne();
+        if (full?.roomstype?.length) {
+          for (const rt of full.roomstype) {
+            if (!rt.isDeleted) {
+              await this.hotelDbRepository.manager.createQueryBuilder()
+                .update('roomstype')
+                .set({ isDeleted: true })
+                .where('id = :id', { id: rt.id })
+                .execute();
+            }
+            if (rt.rooms?.length) {
+              for (const room of rt.rooms) {
+                if (!room.isDeleted) {
+                  await this.hotelDbRepository.manager.createQueryBuilder()
+                    .update('rooms')
+                    .set({ isDeleted: true })
+                    .where('id = :id', { id: room.id })
+                    .execute();
+                }
+              }
+            }
+          }
+        }
+      } catch (cascadeErr) {
+        // No romper creación si falla limpieza; solo loguear.
+        console.error('[createDbHotel] Error limpiando room types al restaurar hotel', cascadeErr);
+      }
+      return saved;
+    }
     const newHotel = this.hotelDbRepository.create({
       ...hotelData,
       name,
