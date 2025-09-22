@@ -27,12 +27,17 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('api', app, document);
 
+  // Allow overriding origins via .env (ALLOWED_ORIGINS comma separated) while keeping safe defaults for local dev
+  const defaultOrigins = [
+    'https://ruta-viajera-front-end.vercel.app',
+    'http://localhost:3001',
+    'http://localhost:3000'
+  ];
+  const envOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) || [];
+  const origins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
+
   app.enableCors({
-    origin: [
-      'https://ruta-viajera-front-end.vercel.app',
-      'http://localhost:3001',
-      'http://localhost:3000'
-    ],
+    origin: origins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
@@ -56,7 +61,12 @@ async function bootstrap() {
   // Static serving for uploaded images (room types, etc.)
   const uploadsPath = join(process.cwd(), 'uploads');
   app.use('/uploads', express.static(uploadsPath));
-  await app.listen(3000);
-  console.log('Server listening on ${process.env.NEXT_PUBLIC_API_URL}/api');
+  // Make port configurable. Requested configuration: backend on port 3000.
+  // Set PORT env var if you ever need to change it.
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+  const baseUrl = `http://localhost:${port}`;
+  console.log(`[Nest] Backend listening on ${baseUrl}`);
+  console.log(`Swagger docs: ${baseUrl}/api`);
 }
 bootstrap();

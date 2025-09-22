@@ -20,6 +20,12 @@ import { Roles } from 'src/decorators/roles.decorator';
 import { Role } from 'src/auth/guards/roles.enum';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { ApiConsumes } from '@nestjs/swagger';
+import { UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { join, extname } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -264,6 +270,39 @@ export class HotelsController {
   @UseGuards(AuthGuard, RolesGuard)
   deleteDbHotel(@Param('id', ParseUUIDPipe) id: string) {
     return this.hotelDbService.deleteDbHotel(id);
+  }
+
+  // --- Image upload (disk) for hotels ---
+  @ApiOperation({ summary: 'Subir imágenes para hoteles (guarda en disco)' })
+  @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ schema: { type: 'object', properties: { files: { type: 'array', items: { type: 'string', format: 'binary' } } } } })
+  @Post('images')
+  @Roles(Role.Admin, Role.SuperAdmin)
+  @UseGuards(AuthGuard, RolesGuard)
+  @UseInterceptors(FilesInterceptor('files', 10, {
+    storage: diskStorage({
+      destination: (req, file, cb) => {
+        const uploadPath = join(process.cwd(), 'uploads', 'hotels');
+        if (!existsSync(uploadPath)) mkdirSync(uploadPath, { recursive: true });
+        cb(null, uploadPath);
+      },
+      filename: (req, file, cb) => {
+        const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = extname(file.originalname) || '.jpg';
+        cb(null, unique + ext);
+      }
+    }),
+    fileFilter: (req, file, cb) => {
+      if (/^image\/(png|jpe?g|webp|gif)$/i.test(file.mimetype)) cb(null, true);
+      else cb(null, false);
+    },
+    limits: { fileSize: 5 * 1024 * 1024 }
+  }))
+  uploadHotelImages(@UploadedFiles() files: Express.Multer.File[]) {
+    const basePath = '/uploads/hotels';
+    const list = (files || []).map(f => `${basePath}/${f.filename}`);
+    return { files: list };
   }
 }
 
