@@ -27,20 +27,51 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('api', app, document);
 
-  // Allow overriding origins via .env (ALLOWED_ORIGINS comma separated) while keeping safe defaults for local dev
+  // ---------------- CORS CONFIG (Production friendly) ----------------
+  // NOTE: The production errors showed missing Access-Control-Allow-Origin on preflight (OPTIONS) requests.
+  // Causes identified:
+  // 1) We omitted the OPTIONS verb in methods => preflight did not get proper headers.
+  // 2) Authorization header requires it to be explicitly allowed in some stricter environments.
+  // 3) Vercel preview deployments (ruta-viajera-front-end-* .vercel.app) were not explicitly listed.
+  // This block adds a dynamic origin validator and explicit allowedHeaders.
+
   const defaultOrigins = [
-    'https://ruta-viajera-front-end.vercel.app',
+    'https://ruta-viajera-front-end.vercel.app', // main prod frontend
     'http://localhost:3001',
     'http://localhost:3000'
   ];
-  const envOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) || [];
-  const origins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
+  // Allow comma separated list in ALLOWED_ORIGINS env (Railway dashboard)
+  const envOrigins = process.env.ALLOWED_ORIGINS?.split(',')
+    .map(o => o.trim())
+    .filter(Boolean) || [];
+  const staticAllowed = Array.from(new Set([...defaultOrigins, ...envOrigins]));
+
+  // Regex for Vercel preview URLs (e.g., https://ruta-viajera-front-end-git-feature-branch-<hash>.vercel.app)
+  const vercelPreviewRegex = /^https:\/\/ruta-viajera-front-end[-a-z0-9]*\.vercel\.app$/i;
 
   app.enableCors({
-    origin: origins,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    origin: (origin, callback) => {
+      if (!origin) {
+        // SSR or same-origin
+        return callback(null, true);
+      }
+      if (staticAllowed.includes(origin) || vercelPreviewRegex.test(origin)) {
+        return callback(null, true);
+      }
+      console.warn('[CORS] Origin bloqueado:', origin);
+      return callback(new Error('Not allowed by CORS'));
+    },
+    methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
+    allowedHeaders: ['Content-Type','Authorization','Accept','X-Requested-With'],
+    exposedHeaders: ['Content-Length'],
     credentials: true,
+    maxAge: 86400,
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   });
+  console.log('[CORS] Orígenes estáticos permitidos:', staticAllowed);
+  console.log('[CORS] Regex previews Vercel:', vercelPreviewRegex.toString());
+  // -------------------------------------------------------------------
 
   app.use(
     session({
@@ -64,7 +95,8 @@ async function bootstrap() {
   // Make port configurable. Requested configuration: backend on port 3000.
   // Set PORT env var if you ever need to change it.
   const port = process.env.PORT || 3000;
-  await app.listen(port);
+  // Bind to 0.0.0.0 for Railway / container platforms
+  await app.listen(port, '0.0.0.0');
   const baseUrl = `http://localhost:${port}`;
   console.log(`[Nest] Backend listening on ${baseUrl}`);
   console.log(`Swagger docs: ${baseUrl}/api`);
