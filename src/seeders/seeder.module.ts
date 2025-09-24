@@ -21,7 +21,6 @@ import { CustomerSeeder } from './entities/customer.seeder';
 import { HotelSeeder } from './entities/hotel.seeder';
 import { RoomsTypeSeeder } from './entities/rooms-type.seeder';
 import { RoomSeeder } from './entities/room.seeder';
-import { ReviewSeeder } from './entities/review.seeder';
 import { RoomAvailabilitySeeder } from './entities/room-availability.seeder';
 import { InitialAdminSeeder } from './entities/initial-admin.seeder';
 
@@ -49,7 +48,6 @@ import { InitialAdminSeeder } from './entities/initial-admin.seeder';
     HotelSeeder,
     RoomsTypeSeeder,
     RoomSeeder,
-    ReviewSeeder,
     RoomAvailabilitySeeder,
   ],
   exports: [SeederService],

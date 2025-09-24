@@ -147,7 +147,7 @@ export class BookingController {
 
   @ApiOperation({ summary: 'Trae un booking por id.' })
   @ApiBearerAuth()
-  @Roles(Role.Admin, Role.User)
+  @Roles(Role.Admin, Role.User, Role.SuperAdmin)
   @UseGuards(AuthGuard, RolesGuard)
   @Get(':id')
   @HttpCode(200)
@@ -167,7 +167,7 @@ export class BookingController {
 
   @ApiOperation({ summary: 'Cancela un booking, cambia su status a Cancelado.' })
   @ApiBearerAuth()
-  @Roles(Role.User, Role.Admin)
+  @Roles(Role.User, Role.Admin, Role.SuperAdmin)
   @UseGuards(AuthGuard, RolesGuard)
   @Put('cancel/:id')
   @HttpCode(201)

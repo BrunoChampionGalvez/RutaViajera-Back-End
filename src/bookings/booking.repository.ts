@@ -65,6 +65,23 @@ export class BookingRepository {
 
     if (bookings.length === 0)
       throw new NotFoundException('No se encontró ningún booking.');
+    for (const b of bookings) {
+      try {
+        if (!b?.bookingDetails?.availabilities?.length) continue;
+        let recalculated = 0;
+        for (const av of b.bookingDetails.availabilities) {
+          const price = (av as any)?.room?.roomtype?.price || 0;
+          const start = new Date(av.startDate).getTime();
+          const end = new Date(av.endDate).getTime();
+          if (!start || !end) continue;
+          const nights = Math.max(1, Math.ceil((end - start)/(1000*60*60*24)));
+          recalculated += price * nights;
+        }
+        if (recalculated > b.bookingDetails.total && Math.abs(recalculated - b.bookingDetails.total) >= 1) {
+          (b.bookingDetails as any).total = recalculated;
+        }
+      } catch { }
+    }
     return bookings;
   }
 
@@ -123,6 +140,22 @@ export class BookingRepository {
     if (!booking)
       throw new NotFoundException('No se encontró un booking con ese id.');
 
+    if (booking?.bookingDetails?.availabilities?.length) {
+      try {
+        let recalculated = 0;
+        for (const av of booking.bookingDetails.availabilities) {
+          const price = (av as any)?.room?.roomtype?.price || 0;
+          const start = new Date(av.startDate).getTime();
+          const end = new Date(av.endDate).getTime();
+          if (!start || !end) continue;
+          const nights = Math.max(1, Math.ceil((end - start)/(1000*60*60*24)));
+          recalculated += price * nights;
+        }
+        if (recalculated > booking.bookingDetails.total && Math.abs(recalculated - booking.bookingDetails.total) >= 1) {
+          (booking.bookingDetails as any).total = recalculated;
+        }
+      } catch { }
+    }
     return booking;
   }
 
@@ -157,6 +190,25 @@ export class BookingRepository {
 
     if (bookings.length === 0)
       throw new BadRequestException('No se encontró ningún booking.');
+    // Backward compatibility: si algún booking antiguo tiene total sin multiplicar noches, recalcular en memoria.
+    for (const b of bookings) {
+      try {
+        if (!b?.bookingDetails?.availabilities?.length) continue;
+        let recalculated = 0;
+        for (const av of b.bookingDetails.availabilities) {
+          const rtPrice = (av as any)?.room?.roomtype?.price || 0;
+          const start = new Date(av.startDate).getTime();
+          const end = new Date(av.endDate).getTime();
+          if (!start || !end) continue;
+          const nights = Math.max(1, Math.ceil((end - start)/(1000*60*60*24)));
+          recalculated += rtPrice * nights;
+        }
+        // Si recalculado es mayor y la diferencia >= 1 asumimos legacy y sustituimos para la respuesta.
+        if (recalculated > b.bookingDetails.total && Math.abs(recalculated - b.bookingDetails.total) >= 1) {
+          (b.bookingDetails as any).total = recalculated;
+        }
+      } catch { /* ignore individual errors */ }
+    }
     return bookings;
   }
 
@@ -195,13 +247,55 @@ export class BookingRepository {
 
     if (bookings.length === 0)
       throw new BadRequestException('No se encontró ningún booking.');
+    // Retroactive nights * price recalculation for legacy totals (admin scope)
+    for (const b of bookings) {
+      try {
+        if (!b?.bookingDetails?.availabilities?.length) continue;
+        let recalculated = 0;
+        for (const av of b.bookingDetails.availabilities) {
+          const price = (av as any)?.room?.roomtype?.price || 0;
+          const start = new Date(av.startDate).getTime();
+          const end = new Date(av.endDate).getTime();
+          if (!start || !end) continue;
+          const nights = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
+          recalculated += price * nights;
+        }
+        if (recalculated > b.bookingDetails.total && Math.abs(recalculated - b.bookingDetails.total) >= 1) {
+          (b.bookingDetails as any).total = recalculated;
+        }
+      } catch { /* ignore individual */ }
+    }
     return bookings;
   }
 
 async getBookingsAndItsCustomerByHotelId(id: string) {
-  const bookings = await this.bookingDBRepository.find({where: {bookingDetails: {hotel: {id: id}}}, relations: {customer: true, bookingDetails: {availabilities: true}}})
-  if (bookings.length === 0) throw new NotFoundException('No se encontraron bookings de ese hotel.')
-  return bookings
+  const bookings = await this.bookingDBRepository.find({
+    where: { bookingDetails: { hotel: { id: id } } },
+    relations: {
+      customer: true,
+      bookingDetails: { availabilities: { room: { roomtype: true } } },
+    },
+  });
+  if (bookings.length === 0) throw new NotFoundException('No se encontraron bookings de ese hotel.');
+  // Retroactive recalculation for per-hotel listing (used in hotel dashboards)
+  for (const b of bookings) {
+    try {
+      if (!b?.bookingDetails?.availabilities?.length) continue;
+      let recalculated = 0;
+      for (const av of b.bookingDetails.availabilities) {
+        const price = (av as any)?.room?.roomtype?.price || 0;
+        const start = new Date(av.startDate).getTime();
+        const end = new Date(av.endDate).getTime();
+        if (!start || !end) continue;
+        const nights = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
+        recalculated += price * nights;
+      }
+      if (recalculated > b.bookingDetails.total && Math.abs(recalculated - b.bookingDetails.total) >= 1) {
+        (b.bookingDetails as any).total = recalculated;
+      }
+    } catch { /* ignore individual */ }
+  }
+  return bookings;
 }
 
   async createBooking(bookingData: CreateBookingDto) {
@@ -214,7 +308,8 @@ async getBookingsAndItsCustomerByHotelId(id: string) {
     if (!customer || customer.isDeleted)
       throw new NotFoundException('Customer no encontrado.');
 
-    let total: number = 0;
+  // Total acumulado de la reserva. Actualmente el front espera price * nights * cantidad.
+  let total: number = 0;
     const availabilitiesCreated = [];
     let numberOfAvailabilitiesToSave = roomTypesIdsAndDates.length;
     let numberOfAvailabilitiesCreated = 0;
@@ -289,7 +384,12 @@ async getBookingsAndItsCustomerByHotelId(id: string) {
             numberOfAvailabilitiesCreated += 1;
             availabilitiesCreated.push(createdAvailability);
             room.availabilities.push(createdAvailability);
-            total += roomTypeOfHotel.price;
+            // Calcular noches (mínimo 1)
+            const nights = Math.max(1, Math.ceil((customerCheckOutDate - customerCheckInDate)/(1000*60*60*24)));
+            // Sumamos price * nights. (Si el cliente envía el mismo roomTypeId varias veces en roomTypesIdsAndDates, cada iteración representará una unidad adicional.)
+            total += roomTypeOfHotel.price * nights;
+            // Debug informativo
+            // console.log('[BookingTotalDebug] roomType', roomTypeId, 'price', roomTypeOfHotel.price, 'nights', nights, 'partialTotal', total);
             isBooked = true;
             break;
           }
@@ -389,7 +489,8 @@ async getBookingsAndItsCustomerByHotelId(id: string) {
     if (!booking || booking.isDeleted)
       throw new NotFoundException('No se encontró un booking con ese id.');
     const availabilitiesCreated = [];
-    let total: number = 0;
+  // Recalcular total con misma lógica (price * nights) usada en createBooking
+  let total: number = 0;
     let numberOfAvailabilitiesToSave = newAvailabilities.length;
     let numberOfAvailabilitiesCreated = 0;
 
@@ -462,7 +563,8 @@ async getBookingsAndItsCustomerByHotelId(id: string) {
             numberOfAvailabilitiesCreated += 1;
             availabilitiesCreated.push(createdAvailability);
             room.availabilities.push(createdAvailability);
-            total += roomType.price;
+            const nights = Math.max(1, Math.ceil((customerCheckOutDate - customerCheckInDate)/(1000*60*60*24)));
+            total += roomType.price * nights;
             isBooked = true;
             break;
           }
@@ -488,6 +590,13 @@ async getBookingsAndItsCustomerByHotelId(id: string) {
       for (const availability of availabilitiesCreated) {
         await this.roomAvailabilityDBRepository.save(availability);
       }
+      // Persist newly recalculated total (legacy code previously omitted the update)
+      try {
+        await this.bookingDetailsDBRepository.update(
+          { id: booking.bookingDetails.id },
+          { total }
+        );
+      } catch { /* swallow update error to not block response */ }
       const newBooking = await this.bookingDBRepository.findOne({
         where: { id: booking.id },
         relations: {
@@ -512,6 +621,23 @@ async getBookingsAndItsCustomerByHotelId(id: string) {
           },
         },
       });
+      // Safety: adjust in-memory if legacy total still smaller after update (e.g., race or rounding)
+      try {
+        if (newBooking?.bookingDetails?.availabilities?.length) {
+          let recalculated = 0;
+          for (const av of newBooking.bookingDetails.availabilities) {
+            const price = (av as any)?.room?.roomtype?.price || 0;
+            const start = new Date(av.startDate).getTime();
+            const end = new Date(av.endDate).getTime();
+            if (!start || !end) continue;
+            const nights = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
+            recalculated += price * nights;
+          }
+          if (recalculated > (newBooking as any).bookingDetails.total && Math.abs(recalculated - (newBooking as any).bookingDetails.total) >= 1) {
+            (newBooking as any).bookingDetails.total = recalculated;
+          }
+        }
+      } catch { /* ignore */ }
 
       return {
         message: 'Booking con availabilities actualizadas.',

@@ -5,7 +5,6 @@ import { CustomerSeeder } from './entities/customer.seeder';
 import { HotelSeeder } from './entities/hotel.seeder';
 import { RoomsTypeSeeder } from './entities/rooms-type.seeder';
 import { RoomSeeder } from './entities/room.seeder';
-import { ReviewSeeder } from './entities/review.seeder';
 import { RoomAvailabilitySeeder } from './entities/room-availability.seeder';
 import { InitialAdminSeeder } from './entities/initial-admin.seeder';
 
@@ -19,7 +18,6 @@ export class SeederService implements OnApplicationBootstrap {
     private readonly hotelSeeder: HotelSeeder,
     private readonly roomsTypeSeeder: RoomsTypeSeeder,
     private readonly roomSeeder: RoomSeeder,
-    private readonly reviewSeeder: ReviewSeeder,
     private readonly roomAvailabilitySeeder: RoomAvailabilitySeeder,
   ) {}
 
@@ -39,7 +37,6 @@ export class SeederService implements OnApplicationBootstrap {
       this.hotelSeeder,
       this.roomsTypeSeeder,
       this.roomSeeder,
-      this.reviewSeeder,
       this.roomAvailabilitySeeder,
     ];
     
@@ -71,7 +68,6 @@ export class SeederService implements OnApplicationBootstrap {
       'hotel': this.hotelSeeder,
       'rooms-type': this.roomsTypeSeeder,
       'room': this.roomSeeder,
-      'review': this.reviewSeeder,
       'room-availability': this.roomAvailabilitySeeder,
     };
 

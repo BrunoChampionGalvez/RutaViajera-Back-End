@@ -24,8 +24,7 @@ The seeders run in the following order to respect foreign key constraints:
 4. **HotelSeeder** - Creates hotels and assigns them to hotel admins
 5. **RoomsTypeSeeder** - Creates room types for each hotel
 6. **RoomSeeder** - Creates individual rooms for each room type
-7. **ReviewSeeder** - Creates reviews from customers for hotels
-8. **RoomAvailabilitySeeder** - Creates availability schedules for rooms
+7. **RoomAvailabilitySeeder** - Creates availability schedules for rooms
 
 ## Sample Data
 
@@ -59,9 +58,6 @@ The seeders run in the following order to respect foreign key constraints:
 - 3-8 rooms per room type
 - Properly numbered (101, 102, 201, etc.)
 
-### Reviews
-- 2-5 reviews per hotel
-- Realistic comments and ratings (3.0-5.0)
 
 ### Room Availability
 - 90 days of availability for each room
@@ -114,7 +110,6 @@ seeders/
 │   ├── hotel.seeder.ts         # Hotel entity seeder
 │   ├── rooms-type.seeder.ts    # RoomsType entity seeder
 │   ├── room.seeder.ts          # Room entity seeder
-│   ├── review.seeder.ts        # Review entity seeder
 │   └── room-availability.seeder.ts # RoomAvailability entity seeder
 ├── interfaces/
 │   └── seeder.interface.ts     # Seeder interface

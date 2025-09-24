@@ -255,8 +255,17 @@ export class HotelsRepository {
   ) {
     const query = this.hotelDbRepository.createQueryBuilder('hotel');
     query.where('hotel.isDeleted = false');
+    // Rating is a float (average). The UI slider uses integer "stars" buckets.
+    // Users expect selecting max=N to include hotels labeled with N stars (i.e., floor(rating) <= N).
+    // That translates to rating < (N + 1), except when N = 5 where we allow rating <= 5.
     if (ratingMin) query.andWhere('hotel.rating >= :ratingMin', { ratingMin });
-    if (ratingMax) query.andWhere('hotel.rating <= :ratingMax', { ratingMax });
+    if (ratingMax) {
+      if (ratingMax < 5) {
+        query.andWhere('hotel.rating < :ratingMaxExclusive', { ratingMaxExclusive: ratingMax + 1 });
+      } else {
+        query.andWhere('hotel.rating <= :ratingMax', { ratingMax: 5 });
+      }
+    }
   // Accent-insensitive equality without requiring the unaccent extension
   const accentSrc = 'ÁÉÍÓÚáéíóúÑñÜü';
   const accentDst = 'AEIOUaeiouNnUu';
