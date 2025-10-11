@@ -1,74 +1,91 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+## RutaViajera – Back-End (API NestJS)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Plataforma de reservas hoteleras: permite a usuarios buscar y reservar habitaciones, a administradores de hotel publicar y gestionar hoteles y a un superadmin administrar el ecosistema desde un dashboard.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Frontend desplegado: https://ruta-viajera-front-end.vercel.app/
+Repositorio del proyecto (Back-End): https://github.com/BrunoChampionGalvez/RutaViajera-Back-End
 
-## Description
+### Tech stack
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- NestJS (Node.js, TypeScript)
+- PostgreSQL (TypeORM)
+- Autenticación con Google OAuth 2.0 y JWT
+- Nodemailer para notificaciones por correo
 
-## Installation
+### Estructura (resumen)
 
-```bash
-$ npm install
+- Módulos principales: auth, hotels, rooms, roomstype, bookings, bookingDetails, availabilities, reviews, customers, hotel-admins, super-admin, email-notify.
+- Swagger disponible en /api para explorar los endpoints.
+
+## Requisitos
+
+- Node.js 18+ y npm
+- PostgreSQL 13+
+
+## Configuración rápida
+
+1) Crea un archivo .env a partir de .env.example y rellena los valores.
+2) Asegúrate de tener una base de datos PostgreSQL creada y accesible.
+
+Variables de entorno necesarias (placeholders):
+
+- DB_NAME, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD: conexión a PostgreSQL.
+- PORT: puerto del API (por defecto 3001 en este proyecto).
+- API_URL: URL pública/base del backend, usada para callbacks de OAuth (ej. http://localhost:3001).
+- ALLOWED_ORIGINS: lista separada por coma para CORS (ej. http://localhost:3000,https://ruta-viajera-front-end.vercel.app).
+- JWT_SECRET: clave para firmar JWT.
+- SESSION_SECRET: clave para sesiones (Passport).
+- GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET: credenciales de OAuth de Google.
+- MAIL, PASS: credenciales de correo (recomendado Gmail con App Password de 16 caracteres).
+
+Ejemplo mínimo de .env:
+
+```
+DB_NAME=rutaviajera
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
+
+PORT=3001
+API_URL=http://localhost:3001
+ALLOWED_ORIGINS=http://localhost:3000,https://ruta-viajera-front-end.vercel.app
+
+JWT_SECRET=mi-jwt-secreto
+SESSION_SECRET=mi-session-secreto
+
+GOOGLE_CLIENT_ID=tu-google-client-id
+GOOGLE_CLIENT_SECRET=tu-google-client-secret
+
+MAIL=tu_correo@gmail.com
+PASS=tu_app_password_de_16_caracteres
 ```
 
-## Running the app
+## Ejecutar en local
 
-```bash
-# development
-$ npm run start
+1) Instalar dependencias
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```powershell
+npm install
 ```
 
-## Test
+2) Levantar el servidor (modo desarrollo)
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+```powershell
+npm run start:dev
 ```
 
-## Support
+3) API en marcha en http://localhost:3001 y documentación en http://localhost:3001/api
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Notas:
+- Asegúrate de que la variable ALLOWED_ORIGINS incluya el origen del front (por ejemplo http://localhost:3000) para evitar errores CORS.
+- Se sirve la carpeta /uploads de forma estática en /uploads.
 
-## Stay in touch
+## Scripts útiles
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- Desarrollo: npm run start:dev
+- Producción: npm run build && npm run start:prod
 
-## License
+## Licencia
 
-Nest is [MIT licensed](LICENSE).
-# RutaViajera-Back-End
+MIT
