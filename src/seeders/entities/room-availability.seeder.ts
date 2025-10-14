@@ -28,11 +28,16 @@ export class RoomAvailabilitySeeder extends BaseSeeder<RoomAvailability> {
       return;
     }
 
-    const allAvailabilities = [];
     const today = new Date();
+    const BATCH_SIZE = 500; // Process 500 records at a time to avoid parameter limit
+    let totalCreated = 0;
     
-    // Create availability for each room for the next 90 days
-    for (const room of rooms) {
+    // Process rooms in batches
+    for (let roomIndex = 0; roomIndex < rooms.length; roomIndex++) {
+      const room = rooms[roomIndex];
+      const availabilities = [];
+      
+      // Create availability for this room for the next 90 days
       for (let i = 0; i < 90; i++) {
         const date = new Date(today);
         date.setDate(today.getDate() + i);
@@ -43,7 +48,7 @@ export class RoomAvailabilitySeeder extends BaseSeeder<RoomAvailability> {
         const startDate = date.toISOString().split('T')[0];
         const endDate = startDate; // Single day availability
         
-        allAvailabilities.push({
+        availabilities.push({
           startDate: startDate,
           endDate: endDate,
           room: room,
@@ -51,10 +56,21 @@ export class RoomAvailabilitySeeder extends BaseSeeder<RoomAvailability> {
           isDeleted: false,
         });
       }
+      
+      // Save this room's availabilities in batches
+      for (let i = 0; i < availabilities.length; i += BATCH_SIZE) {
+        const batch = availabilities.slice(i, i + BATCH_SIZE);
+        await this.repository.save(batch);
+        totalCreated += batch.length;
+      }
+      
+      // Log progress every 50 rooms
+      if ((roomIndex + 1) % 50 === 0) {
+        await this.log(`Progress: Processed ${roomIndex + 1}/${rooms.length} rooms (${totalCreated} availability records created)`);
+      }
     }
-
-    const createdAvailabilities = await this.repository.save(allAvailabilities);
-    await this.log(`Seeded ${createdAvailabilities.length} room availability record(s) for ${rooms.length} room(s)`);
+    
+    await this.log(`Seeded ${totalCreated} room availability record(s) for ${rooms.length} room(s)`);
   }
 
   async shouldRun(): Promise<boolean> {

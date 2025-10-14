@@ -79,10 +79,14 @@ export class RoomsTypeSeeder extends BaseSeeder<RoomsType> {
       },
     ];
 
-    const allRoomTypes = [];
+    const BATCH_SIZE = 100; // Process 100 room types at a time
+    let allRoomTypes = [];
+    let totalCreated = 0;
 
     // Create room types for each hotel
-    for (const hotel of hotels) {
+    for (let hotelIndex = 0; hotelIndex < hotels.length; hotelIndex++) {
+      const hotel = hotels[hotelIndex];
+      
       // Each hotel gets 2-4 room types
       const numRoomTypes = Math.floor(Math.random() * 3) + 2; // 2-4 room types
       const selectedTemplates = roomTypeTemplates.slice(0, numRoomTypes);
@@ -97,10 +101,27 @@ export class RoomsTypeSeeder extends BaseSeeder<RoomsType> {
           hotel: hotel,
         });
       }
+      
+      // Save in batches when we reach BATCH_SIZE
+      if (allRoomTypes.length >= BATCH_SIZE) {
+        await this.repository.save(allRoomTypes);
+        totalCreated += allRoomTypes.length;
+        allRoomTypes = [];
+      }
+      
+      // Log progress every 20 hotels
+      if ((hotelIndex + 1) % 20 === 0) {
+        await this.log(`Progress: Processed ${hotelIndex + 1}/${hotels.length} hotels`);
+      }
     }
-
-    const createdRoomTypes = await this.repository.save(allRoomTypes);
-    await this.log(`Seeded ${createdRoomTypes.length} room type(s) across ${hotels.length} hotel(s)`);
+    
+    // Save remaining room types
+    if (allRoomTypes.length > 0) {
+      await this.repository.save(allRoomTypes);
+      totalCreated += allRoomTypes.length;
+    }
+    
+    await this.log(`Seeded ${totalCreated} room type(s) across ${hotels.length} hotel(s)`);
   }
 
   async shouldRun(): Promise<boolean> {

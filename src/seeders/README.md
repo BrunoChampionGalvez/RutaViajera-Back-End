@@ -39,7 +39,8 @@ The seeders run in the following order to respect foreign key constraints:
 - Only created if that exact email does not already exist.
 
 ### Hotel Admins
-- 4 hotel administrators across different Colombian cities
+- 22 hotel administrators across different Latin American countries
+- Countries: Colombia, México, Argentina, Perú, Chile, Brasil, Ecuador, Costa Rica, Panamá, Uruguay
 - Password: `HotelAdmin123!`
 
 ### Customers
@@ -47,8 +48,12 @@ The seeders run in the following order to respect foreign key constraints:
 - Password: `Customer123!`
 
 ### Hotels
-- 5 hotels across Colombian cities (Bogotá, Medellín, Cartagena, Manizales, Cali)
+- 50+ hotels across 10 Latin American countries
+- Countries represented: Colombia, México, Argentina, Perú, Chile, Brasil, Ecuador, Costa Rica, Panamá, Uruguay
+- Multiple hotels per major city (Buenos Aires, Ciudad de México, Lima, Rio de Janeiro, Santiago, etc.)
+- Wide variety: luxury hotels, boutique properties, business hotels, beach resorts, mountain lodges
 - Complete with descriptions, services, locations, and images
+- Price range: $85 - $520 per night
 
 ### Room Types
 - Standard, Deluxe, Suite, and Family room types
