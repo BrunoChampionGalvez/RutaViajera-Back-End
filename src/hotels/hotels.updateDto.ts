@@ -61,11 +61,11 @@ export class UpdateHotelDto {
   city?: string;
 
   /**
-  * Debe ingresar un string, de 50 caracteres como maximo, no nulo , para direccion del hotel.
-  * @example 'St las flores 123'
+  * Debe ingresar un string, de 255 caracteres como maximo, no nulo , para direccion del hotel.
+  * @example 'Avenida Libertador Bernardo O Higgins 1234, Santiago de Chile'
   */
   @IsString()
-  @MaxLength(50)
+  @MaxLength(255)
   @IsNotEmpty()
   address?: string;
 
