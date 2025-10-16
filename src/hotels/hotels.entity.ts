@@ -36,7 +36,7 @@ export class Hotel {
   @Column({ type: 'float', nullable: true })
   price: number;
 
-  @Column({ type: 'varchar', length: 50, nullable: false })
+  @Column({ type: 'varchar', length: 255, nullable: false })
   address: string;
 
   @Column({ type: 'simple-json', default: [0, 0] })
